@@ -4,31 +4,143 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <link rel="stylesheet" href="css/tailwind.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/tailwindcss@2.2.19/dist/tailwind.min.css">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.9.0/css/all.css">
   <title>Start</title>
 </head>
 
 <body>
   <div class="container mx-auto my-5 space-y-4" id="app">
-    <div class="shadow-lg rounded-lg" v-bind:class="group.classes" v-for="group in groups">
-      <div class="p-3 rounded-t-lg font-bold" v-bind:class="group.color">
-        {{ group.name }}
-      </div>
-      <div class="flex p-5 space-x-5">
-        <div class="flex-1 shadow-md rounded-lg border-2" v-bind:class="linkGroup.border"
-          v-for="linkGroup in group.linkGroups">
-          <div class="p-2 font-bold" v-bind:class="linkGroup.title">
-            {{ linkGroup.name }}
+    <button data-tippy-content="Edit" data-tippy-placement="left"
+      class="fixed bottom-8 right-8 w-14 h-14 bg-yellow-500 hover:bg-yellow-400 p-3 rounded-full shadow-lg text-white flex items-center justify-center"
+      v-if="localStorage && !edit" @click="edit = true"><i class="fas fa-pen"></i></button>
+    <button data-tippy-content="Save" data-tippy-placement="left"
+      class="fixed bottom-8 right-8 w-14 h-14 bg-green-500 hover:bg-green-400 p-3 rounded-full shadow-lg text-white flex items-center justify-center"
+      v-if="edit" @click="accept"><i class="fas fa-check"></i></button>
+    <button data-tippy-content="Export" data-tippy-placement="left"
+      class="fixed bottom-24 right-8 w-14 h-14 bg-blue-500 hover:bg-blue-400 p-3 rounded-full shadow-lg text-white flex items-center justify-center"
+      v-if="edit" @click="download"><i class="fas fa-download"></i></button>
+    <button data-tippy-content="Import" data-tippy-placement="left"
+      class="fixed bottom-40 right-8 w-14 h-14 bg-yellow-500 hover:bg-yellow-400 p-3 rounded-full shadow-lg text-white flex items-center justify-center"
+      v-if="edit" @click="importFile"><i class="fas fa-file-import"></i></button>
+    <button data-tippy-content="Revert" data-tippy-placement="left"
+      class="fixed bottom-56 right-8 w-14 h-14 bg-red-500 hover:bg-red-400 p-3 rounded-full shadow-lg text-white flex items-center justify-center"
+      v-if="edit" @click="reset"><i class="fas fa-undo"></i></button>
+
+    <template v-for="block, blockIdx in blocks" :key="block.name">
+      <div class="shadow-lg rounded-lg" v-if="block.visible || edit">
+        <div class="p-2 pl-5 rounded-t-lg font-bold text-white flex" :class="`bg-${block.color}`">
+          {{ block.name }}
+          <span class="flex-grow" v-if="edit"></span>
+          <button data-tippy-content="Visible" class=" w-10 hover:bg-gray-200 rounded" v-if="edit && block.visible"
+            @click="block.visible = false"><i class="fas fa-eye"></i></button>
+          <button data-tippy-content="Hidden" class=" w-10 hover:bg-gray-200 text-gray-500 rounded"
+            v-if="edit && !block.visible" @click="block.visible = true"><i class="fas fa-eye-slash"></i></button>
+          <button data-tippy-content="Edit" class="w-8 text-yellow-500 hover:bg-yellow-200 rounded"
+            @click="editBlock(blockIdx, $event)" v-if="edit"><i class="fas fa-pen"></i></button>
+          <button data-tippy-content="Delete" class="mr-2 w-10 text-red-500 hover:bg-red-300 rounded" v-if="edit"
+            @click="deleteBlock(blockIdx)"><i class="fas fa-trash"></i></button>
+        </div>
+        <div class="flex p-3 space-x-5">
+          <div class="flex-1 max-w-sm shadow-md rounded-lg border-2 pb-1" :class="`border-${group.color}`"
+            v-for="group, groupIdx in block.groups">
+            <div class="p-1 font-bold text-white flex" :class="`bg-${group.color}`">
+              {{ group.name }}
+              <span class="flex-grow" v-if="edit"></span>
+              <button data-tippy-content="Edit" class="w-8 text-yellow-500 hover:bg-yellow-200 rounded"
+                @click="editGroup(blockIdx, groupIdx, $event)" v-if="edit"><i class="fas fa-pen"></i></button>
+              <button data-tippy-content="Delete" class="w-8 text-red-500 hover:bg-red-300 rounded"
+                @click="deleteGroup(blockIdx, groupIdx)" v-if="edit"><i class="fas fa-trash"></i></button>
+            </div>
+            <template v-for="link, linkIdx in group.links">
+              <a class="block px-2 py-1 hover:bg-gray-100 flex" :href="link.url" v-if="!edit">{{ link.name }}</a>
+              <div class="block px-2 py-1 hover:bg-gray-100 flex" v-if="edit">
+                {{ link.name }}
+                <span class="flex-grow" v-if="edit"></span>
+                <button data-tippy-content="Edit" class="edit-link w-8 text-yellow-500 hover:bg-yellow-200 rounded"
+                  @click="editLink(blockIdx, groupIdx, linkIdx, $event)" v-if="edit"><i class="fas fa-pen"></i></button>
+                <button data-tippy-content="Delete" class="w-8 text-red-500 hover:bg-red-300 rounded"
+                  @click="deleteLink(blockIdx, groupIdx, linkIdx)" v-if="edit"><i class="fas fa-trash"></i></button>
+              </div>
+            </template>
+            <button data-tippy-content="Add" class="w-full px-2 py-1 hover:bg-gray-100"
+              @click="editLink(blockIdx, groupIdx, -1, $event)" v-if="edit"><i class="fas fa-plus"></i></button>
           </div>
-          <a class="block px-2 py-1 hover:bg-gray-100" :href="link.url" v-for="link in linkGroup.links">
-            {{ link.name }}
-          </a>
+          <div class="w-12 shadow-md rounded-lg border-2 pb-1 border-gray-400" v-if="edit">
+            <div class="p-1 font-bold text-white bg-gray-400 text-white">
+              <button data-tippy-content="Add" class="w-full px-2 py-1 hover:bg-gray-300"
+                @click="editGroup(blockIdx, -1, $event)"><i class="fas fa-plus"></i></button>
+            </div>
+          </div>
         </div>
       </div>
+    </template>
+
+    <div class="shadow-lg rounded-lg" v-if="edit">
+      <div class="p-2 pl-5 rounded-t-lg font-bold text-white flex bg-gray-400">
+        <button data-tippy-content="Add" class="w-8 px-2 py-1 hover:bg-gray-300" @click="editBlock(-1, $event)">
+          <i class="fas fa-plus"></i>
+        </button>
+      </div>
+      <div class="flex p-3 space-x-5"></div>
     </div>
+
+    <input type="file" class="hidden" id="file-input" accept="application/json" @change="loadFileContent" />
+    <tooltip-dummy v-if="edit"></tooltip-dummy>
+
+    <teleport to="#edit-popup" v-if="showPopup">
+      <edit-link v-bind="editData" v-if="editData.type === 'link'"></edit-link>
+      <edit-title v-bind="editData" v-if="editData.type === 'title'"></edit-title>
+    </teleport>
   </div>
 
-  <script src="js/vue.min.js"></script>
+  <script type="text/x-template" id="edit-link-template">
+    <div class="bg-white text-black p-2 w-80">
+      <div class="block">
+        <i class="fas fa-tag"></i>
+        <input type="text" v-model="name" class="w-64 p-1 m-2 border-solid border-2 border-gray-300" />
+      </div>
+      <div class="block">
+        <i class="fas fa-at"></i>
+        <input type="text" v-model="url" class="w-64 p-1 m-2 border-solid border-2 border-gray-300" />
+      </div>
+      <div class="block px-2 py-1 flex">
+        <span class="flex-grow"></span>
+        <button class="w-8 h-8 mr-1 rounded text-white bg-green-500 hover:bg-green-400" @click="save"><i class="fas fa-save"></i></button>
+        <button class="w-8 h-8 rounded text-red-500 hover:bg-red-100" @click="close"><i class="fas fa-ban"></i></button>
+      </div>
+    </div>
+  </script>
+
+  <script type="text/x-template" id="edit-title-template">
+    <div class="bg-white text-black p-2 w-80">
+      <div class="block">
+        <i class="fas fa-tag"></i>
+        <input type="text" v-model="name" class="w-64 p-1 m-2 border-solid border-2 border-gray-300" />
+      </div>
+      <div class="block">
+        <i class="fas fa-palette"></i>
+        <input type="text" v-model="color" class="w-60 p-1 m-2 border-solid border-2 border-gray-300" />
+        <i class="fas fa-tint w-8 h-8 p-2 text-center text-white" :class="`bg-${color}`"></i>
+      </div>
+      <div class="block">
+        <button class="w-3 h-3 m-0.5" :class="`bg-${c}`" v-for="c in colors" :key="c" @click="color = c" />
+      </div>
+      <div class="block">
+        <a class="ml-6" href="https://tailwindcss.com/docs/customizing-colors#color-palette-reference" target="_blank" rel="noopener noreferrer">Tailwind.css color palette</a>
+      </div>
+      <div class="block px-2 py-1 flex">
+        <span class="flex-grow"></span>
+        <button class="w-8 h-8 mr-1 rounded text-white bg-green-500 hover:bg-green-400" @click="save"><i class="fas fa-save"></i></button>
+        <button class="w-8 h-8 rounded text-red-500 hover:bg-red-100" @click="close"><i class="fas fa-ban"></i></button>
+      </div>
+    </div>
+  </script>
+
+  <script src="https://unpkg.com/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
+  <script src="https://unpkg.com/tippy.js@6.3.7/dist/tippy-bundle.umd.min.js"></script>
+  <script src="https://unpkg.com/vue@3.2.22/dist/vue.global.prod.js"></script>
+  <script src="startpage-data.js"></script>
   <script src="startpage.js"></script>
 </body>
 
