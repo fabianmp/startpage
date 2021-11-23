@@ -58,6 +58,20 @@ const app = Vue.createApp({
     deleteLink(block, group, link) {
       this.blocks[block].groups[group].links.splice(link, 1)
     },
+    moveLinkUp(block, group, link) {
+      if (link === 0) return
+
+      const data = this.blocks[block].groups[group].links[link]
+      this.blocks[block].groups[group].links.splice(link, 1)
+      this.blocks[block].groups[group].links.splice(link - 1, 0, data)
+    },
+    moveLinkDown(block, group, link) {
+      if (link === this.blocks[block].groups[group].links.length - 1) return
+
+      const data = this.blocks[block].groups[group].links[link]
+      this.blocks[block].groups[group].links.splice(link, 1)
+      this.blocks[block].groups[group].links.splice(link + 1, 0, data)
+    },
     editGroup(block, group, event) {
       this.editData = { block, group, type: 'title' }
       this.showEditPopup(event.currentTarget)
@@ -65,12 +79,40 @@ const app = Vue.createApp({
     deleteGroup(block, group) {
       this.blocks[block].groups.splice(group, 1)
     },
+    moveGroupLeft(block, group) {
+      if (group === 0) return
+
+      const data = this.blocks[block].groups[group]
+      this.blocks[block].groups.splice(group, 1)
+      this.blocks[block].groups.splice(group - 1, 0, data)
+    },
+    moveGroupRight(block, group) {
+      if (group === this.blocks[block].groups.length - 1) return
+
+      const data = this.blocks[block].groups[group]
+      this.blocks[block].groups.splice(group, 1)
+      this.blocks[block].groups.splice(group + 1, 0, data)
+    },
     editBlock(block, event) {
       this.editData = { block, group: undefined, type: 'title' }
       this.showEditPopup(event.currentTarget)
     },
     deleteBlock(block) {
       this.blocks.splice(block, 1)
+    },
+    moveBlockUp(block) {
+      if (block === 0) return
+
+      const data = this.blocks[block]
+      this.blocks.splice(block, 1)
+      this.blocks.splice(block - 1, 0, data)
+    },
+    moveBlockDown(block) {
+      if (block === this.blocks.length - 1) return
+
+      const data = this.blocks[block]
+      this.blocks.splice(block, 1)
+      this.blocks.splice(block + 1, 0, data)
     },
     reset() {
       this.blocks = JSON.parse(window.localStorage.getItem('startpage-data') ?? '[]')
