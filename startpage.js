@@ -8,6 +8,10 @@ const app = Vue.createApp({
       blocks: [],
       edit: false,
       editData: null,
+      dragData: null,
+      dragSource: null,
+      placeholder: null,
+      placeholderTemplate: null,
       showPopup: false
     }
   },
@@ -58,19 +62,126 @@ const app = Vue.createApp({
     deleteLink(block, group, link) {
       this.blocks[block].groups[group].links.splice(link, 1)
     },
-    moveLinkUp(block, group, link) {
-      if (link === 0) return
-
-      const data = this.blocks[block].groups[group].links[link]
-      this.blocks[block].groups[group].links.splice(link, 1)
-      this.blocks[block].groups[group].links.splice(link - 1, 0, data)
+    dragType() {
+      if (this.dragData.group === undefined && this.dragData.link === undefined)
+      {
+        return "block"
+      }
+      if (this.dragData.link === undefined)
+      {
+        return "group"
+      }
+      return "link"
     },
-    moveLinkDown(block, group, link) {
-      if (link === this.blocks[block].groups[group].links.length - 1) return
+    dragMatch(group, link) {
+      if (this.dragType() === "link" && link !== undefined) {
+        return true
+      }
+      if (this.dragType() === "group" && group !== undefined && link === undefined) {
+        return true
+      }
+      if (this.dragType() === "block" && group === undefined && link === undefined) {
+        return true
+      }
+      return false
+    },
+    onDragStart(event, block, group, link) {
+      this.hideEditPopup()
+      event.dataTransfer.effectAllowed = "move"
+      if (!this.dragData) {
+        this.dragData = {block, group, link}
+        this.dragSource = event.currentTarget
+        setTimeout(() => {
+          this.placeholderTemplate = this.dragSource.cloneNode(true)
+          this.placeholderTemplate.classList.add("opacity-60")
+          this.dragSource.classList.add("hidden")
+        }, 1)
+      }
+    },
+    onDragEnd() {
+      this.dragSource?.classList.remove("hidden")
+      this.dragSource = null
+      this.dragData = null
+      this.placeholder?.remove()
+      this.placeholder = null
+      this.placeholderTemplate = null
+      this.$forceUpdate()
+    },
+    onDragOver(event, block, group, link) {
+      if (!this.dragMatch(group, link)) {
+        return
+      }
+      event.preventDefault()
+    },
+    onDragEnter(event, block, group, link, temporary) {
+      if (!this.dragMatch(group, link)) {
+        return
+      }
+      event.preventDefault()
+      if (temporary) {
+        return
+      }
+      this.placeholder?.remove()
+      this.placeholder = this.placeholderTemplate.cloneNode(true)
+      this.placeholder.addEventListener("dragover", e => this.onDragOver(e, block, group, link))
+      this.placeholder.addEventListener("dragenter", e => this.onDragEnter(e, block, group, link, true))
+      this.placeholder.addEventListener("dragleave", e => this.onDragLeave(e, block, group, link))
+      this.placeholder.addEventListener("drop", e => this.onDrop(e, block, group, link))
+      event.currentTarget.parentNode.insertBefore(this.placeholder, event.currentTarget)
+    },
+    onDragLeave(event, block, group, link) {
+      if (!this.dragMatch(group, link)) {
+        return
+      }
+      event.preventDefault()
+    },
+    onDrop(event, block, group, link) {
+      if (!this.dragMatch(group, link)) {
+        return
+      }
+      event.preventDefault()
+      event.dataTransfer.dropEffect = "move"
 
-      const data = this.blocks[block].groups[group].links[link]
-      this.blocks[block].groups[group].links.splice(link, 1)
-      this.blocks[block].groups[group].links.splice(link + 1, 0, data)
+      if (this.dragType() === "link") {
+        const data = this.blocks[this.dragData.block].groups[this.dragData.group].links[this.dragData.link]
+        if (link === -1) {
+          this.blocks[block].groups[group].links.push(data)
+        } else {
+          this.blocks[block].groups[group].links.splice(link, 0, data)
+        }
+        if (this.dragData.block === block && this.dragData.group === group && this.dragData.link > link && link !== -1) {
+          this.blocks[this.dragData.block].groups[this.dragData.group].links.splice(this.dragData.link + 1, 1)
+        } else {
+          this.blocks[this.dragData.block].groups[this.dragData.group].links.splice(this.dragData.link, 1)
+        }
+      } else if (this.dragType() === "group") {
+        const data = this.blocks[this.dragData.block].groups[this.dragData.group]
+        if (group === -1) {
+          this.blocks[block].groups.push(data)
+        } else {
+          this.blocks[block].groups.splice(group, 0, data)
+        }
+        if (this.dragData.block === block && this.dragData.group > group && group !== -1) {
+          this.blocks[this.dragData.block].groups.splice(this.dragData.group + 1, 1)
+        } else {
+          this.blocks[this.dragData.block].groups.splice(this.dragData.group, 1)
+        }
+      } else {
+        const data = this.blocks[this.dragData.block]
+        if (block === -1) {
+          this.blocks.push(data)
+        } else {
+          this.blocks.splice(block, 0, data)
+        }
+        if (this.dragData.block > block && block !== -1) {
+          this.blocks.splice(this.dragData.block + 1, 1)
+        } else {
+          this.blocks.splice(this.dragData.block, 1)
+        }
+      }
+
+      this.placeholder?.remove()
+      this.placeholder = null
     },
     editGroup(block, group, event) {
       this.editData = { block, group, type: 'title' }
@@ -79,40 +190,12 @@ const app = Vue.createApp({
     deleteGroup(block, group) {
       this.blocks[block].groups.splice(group, 1)
     },
-    moveGroupLeft(block, group) {
-      if (group === 0) return
-
-      const data = this.blocks[block].groups[group]
-      this.blocks[block].groups.splice(group, 1)
-      this.blocks[block].groups.splice(group - 1, 0, data)
-    },
-    moveGroupRight(block, group) {
-      if (group === this.blocks[block].groups.length - 1) return
-
-      const data = this.blocks[block].groups[group]
-      this.blocks[block].groups.splice(group, 1)
-      this.blocks[block].groups.splice(group + 1, 0, data)
-    },
     editBlock(block, event) {
       this.editData = { block, group: undefined, type: 'title' }
       this.showEditPopup(event.currentTarget)
     },
     deleteBlock(block) {
       this.blocks.splice(block, 1)
-    },
-    moveBlockUp(block) {
-      if (block === 0) return
-
-      const data = this.blocks[block]
-      this.blocks.splice(block, 1)
-      this.blocks.splice(block - 1, 0, data)
-    },
-    moveBlockDown(block) {
-      if (block === this.blocks.length - 1) return
-
-      const data = this.blocks[block]
-      this.blocks.splice(block, 1)
-      this.blocks.splice(block + 1, 0, data)
     },
     reset() {
       this.blocks = JSON.parse(window.localStorage.getItem('startpage-data') ?? '[]')
