@@ -1,0 +1,13 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: {{ include "startpage.fullname" . }}
+  labels:
+    {{- include "startpage.labels" . | nindent 4 }}
+data:
+  index.html: |-
+    {{- .Files.Get "index.html" | nindent 4 }}
+  startpage.js: |-
+    {{- .Files.Get "startpage.js" | nindent 4 }}
+  startpage-data.js: |-
+    var data = {{ .Values.groups | toPrettyJson  | indent 4 }}
