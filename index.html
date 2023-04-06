@@ -5,6 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
   <link rel="stylesheet" href="https://unpkg.com/@fortawesome/fontawesome-free@6.2.1/css/all.min.css">
+  <link rel="stylesheet" href="json-editor.css">
   <title>Start</title>
 </head>
 
@@ -13,15 +14,15 @@
     <button data-tippy-content="Edit" data-tippy-placement="left"
       class="fixed bottom-8 right-8 w-14 h-14 bg-yellow-500 hover:bg-yellow-400 p-3 rounded-full shadow-lg text-white flex items-center justify-center"
       v-if="localStorage && !edit" @click="edit = true"><i class="fas fa-pen"></i></button>
+    <button data-tippy-content="Cancel" data-tippy-placement="left"
+      class="fixed bottom-8 right-8 w-14 h-14 bg-gray-500 hover:bg-gray-400 p-3 rounded-full shadow-lg text-white flex items-center justify-center"
+      v-if="edit" @click="cancel"><i class="fas fa-xmark"></i></button>
     <button data-tippy-content="Save" data-tippy-placement="left"
-      class="fixed bottom-8 right-8 w-14 h-14 bg-green-500 hover:bg-green-400 p-3 rounded-full shadow-lg text-white flex items-center justify-center"
+      class="fixed bottom-24 right-8 w-14 h-14 bg-green-500 hover:bg-green-400 p-3 rounded-full shadow-lg text-white flex items-center justify-center"
       v-if="edit" @click="accept"><i class="fas fa-check"></i></button>
-    <button data-tippy-content="Export" data-tippy-placement="left"
-      class="fixed bottom-24 right-8 w-14 h-14 bg-blue-500 hover:bg-blue-400 p-3 rounded-full shadow-lg text-white flex items-center justify-center"
-      v-if="edit" @click="download"><i class="fas fa-download"></i></button>
-    <button data-tippy-content="Import" data-tippy-placement="left"
-      class="fixed bottom-40 right-8 w-14 h-14 bg-yellow-500 hover:bg-yellow-400 p-3 rounded-full shadow-lg text-white flex items-center justify-center"
-      v-if="edit" @click="importFile"><i class="fas fa-file-import"></i></button>
+    <button data-tippy-content="Edit JSON" data-tippy-placement="left"
+      class="fixed bottom-40 right-8 w-14 h-14 bg-blue-500 hover:bg-blue-400 p-3 rounded-full shadow-lg text-white flex items-center justify-center"
+      v-if="edit" @click="editJson()"><i class="fas fa-edit"></i></button>
     <button data-tippy-content="Revert" data-tippy-placement="left"
       class="fixed bottom-56 right-8 w-14 h-14 bg-red-500 hover:bg-red-400 p-3 rounded-full shadow-lg text-white flex items-center justify-center"
       v-if="edit" @click="reset"><i class="fas fa-undo"></i></button>
@@ -102,6 +103,17 @@
         </div>
         <div class="flex p-3 space-x-5"></div>
       </div>
+
+      <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full p-10 flex" v-if="showJson" @show="loadJson()">
+        <button data-tippy-content="Cancel" data-tippy-placement="left"
+          class="fixed bottom-8 right-8 w-14 h-14 bg-gray-500 hover:bg-gray-400 p-3 rounded-full shadow-lg text-white flex items-center justify-center"
+          @click="cancelJson()"><i class="fas fa-xmark"></i></button>
+        <button data-tippy-content="Save" data-tippy-placement="left"
+          class="fixed bottom-24 right-8 w-14 h-14 bg-green-500 hover:bg-green-400 p-3 rounded-full shadow-lg text-white flex items-center justify-center"
+          @click="acceptJson()"><i class="fas fa-check"></i></button>
+        <json-editor class="border-2 w-full h-full rounded-lg editor" id="editor" indent="2">
+        </json-editor>
+      </div>
     </div>
 
     <input type="file" class="hidden" id="file-input" accept="application/json" @change="loadFileContent" />
@@ -160,6 +172,7 @@
   <script src="https://unpkg.com/tippy.js@6.3.7/dist/tippy-bundle.umd.min.js"></script>
   <script src="https://unpkg.com/vue@3.2.45/dist/vue.global.prod.js"></script>
   <script src="https://cdn.tailwindcss.com/3.2.4"></script>
+  <script src="json-editor.js"></script>
   <script src="startpage-data.js"></script>
   <script src="startpage.js"></script>
 </body>

@@ -12,7 +12,8 @@ const app = Vue.createApp({
       dragSource: null,
       placeholder: null,
       placeholderTemplate: null,
-      showPopup: false
+      showPopup: false,
+      showJson: false
     }
   },
   mounted() {
@@ -200,31 +201,21 @@ const app = Vue.createApp({
     reset() {
       this.blocks = JSON.parse(window.localStorage.getItem('startpage-data') ?? '[]')
     },
-    importFile() {
-      document.querySelector("#file-input").click()
+    cancel() {
+      this.reset()
+      this.hideEditPopup()
+      this.edit = false
     },
-    loadFileContent(event) {
-      if (event.target.files.length !== 1) {
-        return
-      }
-      const file = event.target.files[0]
-      var reader = new FileReader()
-      reader.addEventListener('load', function (e) {
-        const data = JSON.parse(e.target.result)
-        vm.blocks.splice(0, vm.blocks.length, ...data)
-      })
-      reader.readAsText(file)
-      event.target.value = null
+    editJson() {
+      this.showJson = true
+      Vue.nextTick(() => document.getElementById("editor").json_value = this.blocks)
     },
-    download() {
-      const jsonData = JSON.stringify(JSON.parse(window.localStorage.getItem('startpage-data')), null, 2)
-      var element = document.createElement('a')
-      element.style.display = 'none'
-      element.setAttribute('href', 'data:application/jsoncharset=utf-8,' + encodeURIComponent(jsonData))
-      element.setAttribute('download', 'startpage.json')
-      document.body.appendChild(element)
-      element.click()
-      document.body.removeChild(element)
+    acceptJson() {
+      this.blocks = document.getElementById("editor").json_value
+      this.showJson = false
+    },
+    cancelJson() {
+      this.showJson = false
     },
     accept() {
       window.localStorage.setItem('startpage-data', JSON.stringify(this.blocks))

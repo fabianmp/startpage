@@ -1,0 +1,44 @@
+.editor {
+  background: #ffffff;
+  border: 1px solid #000000;
+}
+
+.editor::part(braces) {
+  color: #c00000;
+}
+.editor::part(brackets) {
+  color: #001483;
+}
+.editor::part(colon) {
+  color: #000000;
+}
+.editor::part(comma) {
+  color: #000000;
+}
+.editor::part(string) {
+  color: #afafaf;
+}
+.editor::part(string_quotes) {
+  color: #afafaf;
+}
+.editor::part(key) {
+  color: #5c5c5c;
+}
+.editor::part(key_quotes) {
+  color: #5c5c5c;
+}
+.editor::part(value) {
+  color: #0000ff;
+}
+.editor::part(number) {
+  color: #0000ff;
+}
+.editor::part(null) {
+  color: #0000ff;
+}
+.editor::part(true) {
+  color: #0000ff;
+}
+.editor::part(false) {
+  color: #0000ff;
+}
