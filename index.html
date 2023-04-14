@@ -25,9 +25,9 @@
     <button data-tippy-content="Edit JSON" data-tippy-placement="left"
       class="fixed bottom-40 right-8 w-14 h-14 bg-blue-500 hover:bg-blue-400 p-3 rounded-full shadow-lg text-white flex items-center justify-center"
       v-if="edit" @click="editJson()"><i class="fas fa-edit"></i></button>
-    <button data-tippy-content="Revert" data-tippy-placement="left"
-      class="fixed bottom-56 right-8 w-14 h-14 bg-red-500 hover:bg-red-400 p-3 rounded-full shadow-lg text-white flex items-center justify-center"
-      v-if="edit" @click="reset"><i class="fas fa-undo"></i></button>
+    <button data-tippy-content="Versions" data-tippy-placement="left"
+      class="fixed bottom-8 left-8 bg-gray-200 hover:bg-gray-100 px-5 py-3 rounded-full shadow-lg flex items-center justify-center"
+      v-if="edit" @click="showVersions"><i class="fas fa-timeline pr-2"></i>{{ lastUpdated?.toLocaleString() }}</button>
 
     <div class="container mx-auto sm:my-5 space-y-4">
       <template v-for="block, blockIdx in blocks" :key="block.name">
@@ -121,9 +121,10 @@
     <input type="file" class="hidden" id="file-input" accept="application/json" @change="loadFileContent" />
     <tooltip-dummy v-if="edit"></tooltip-dummy>
 
-    <teleport to="#edit-popup" v-if="showPopup">
-      <edit-link v-bind="editData" v-if="editData.type === 'link'"></edit-link>
-      <edit-title v-bind="editData" v-if="editData.type === 'title'"></edit-title>
+    <teleport to="#popup" v-if="showPopup">
+      <edit-link v-bind="popupData" v-if="popupData.type === 'link'"></edit-link>
+      <edit-title v-bind="popupData" v-if="popupData.type === 'title'"></edit-title>
+      <show-versions v-bind="popupData" v-if="popupData.type === 'versions'"></show-versions>
     </teleport>
   </div>
 
@@ -170,9 +171,22 @@
     </div>
   </script>
 
+  <script type="text/x-template" id="versions-template">
+    <div class="bg-white text-black py-2 w-52">
+      <div class="block">
+        <div class="flex hover:bg-gray-100" :class="{ 'bg-gray-200': v.valueOf() === lastUpdated.valueOf() }" v-for="v in versions">
+        <button class="p-2 w-full flex-grow text-left" @click="loadVersion(v)"><i class="fas fa-clock mr-2"></i>{{ v.toLocaleString() }}</button>
+        <button data-tippy-content="Delete" class="mr-2 w-10 text-red-500 hover:bg-red-300 rounded"
+          @click="deleteVersion(v)"><i class="fas fa-trash"></i></button>
+        </div>
+      </div>
+    </div>
+  </script>
+
   <script src="https://unpkg.com/@popperjs/core@2.11.7/dist/umd/popper.min.js"></script>
   <script src="https://unpkg.com/tippy.js@6.3.7/dist/tippy-bundle.umd.min.js"></script>
   <script src="https://unpkg.com/vue@3.2.47/dist/vue.global.prod.js"></script>
+  <script src="https://unpkg.com/idb@7.1.1/build/umd.js"></script>
   <script src="json-editor.js"></script>
   <script src="startpage-data.js"></script>
   <script src="startpage.js"></script>

@@ -5,9 +5,10 @@ const app = Vue.createApp({
   data() {
     return {
       localStorage: true,
+      lastUpdated: null,
       blocks: [],
       edit: false,
-      editData: null,
+      popupData: null,
       dragData: null,
       dragSource: null,
       placeholder: null,
@@ -16,13 +17,24 @@ const app = Vue.createApp({
       showJson: false
     }
   },
-  mounted() {
+  async mounted() {
     if (data !== undefined && data.length !== 0) {
       this.blocks.splice(0, this.blocks.length, ...data)
       this.localStorage = false
     } else {
-      const data = JSON.parse(window.localStorage.getItem('startpage-data') ?? '[]')
-      this.blocks.splice(0, this.blocks.length, ...data)
+      const db = await idb.openDB("Startpage", 1, {
+        upgrade(db, oldVersion, newVersion, transaction, event) {
+          db.createObjectStore("data", { keyPath: "timestamp" })
+        }
+      })
+      if (await db.count("data") === 0) {
+        const blocks = JSON.parse(window.localStorage.getItem('startpage-data') ?? '[]')
+        await db.put("data", {timestamp: new Date(), blocks: blocks})
+        window.localStorage.removeItem('startpage-data')
+      }
+      const versions = await db.getAllKeys("data")
+      const latest = versions[versions.length-1]
+      await this.loadVersion(latest)
       this.localStorage = true
     }
     tippy.createSingleton(tippy('[data-tippy-content]'), {
@@ -31,11 +43,11 @@ const app = Vue.createApp({
     })
   },
   methods: {
-    showEditPopup(target) {
-      this.editTippy?.destroy()
-      this.editTippy = tippy(target, {
+    openPopup(target) {
+      this.popupTippy?.destroy()
+      this.popupTippy = tippy(target, {
         appendTo: () => document.getElementById('app'),
-        content: '<div id="edit-popup"></div>',
+        content: '<div id="popup"></div>',
         allowHTML: true,
         hideOnClick: false,
         interactive: true,
@@ -51,14 +63,14 @@ const app = Vue.createApp({
         }
       })
     },
-    hideEditPopup() {
-      this.editTippy?.destroy()
-      this.editData = null
+    hidePopup() {
+      this.popupTippy?.destroy()
+      this.popupData = null
       this.showPopup = false
     },
     editLink(block, group, link, event) {
-      this.editData = { block, group, link, type: 'link' }
-      this.showEditPopup(event.currentTarget)
+      this.popupData = { block, group, link, type: 'link' }
+      this.openPopup(event.currentTarget)
     },
     deleteLink(block, group, link) {
       this.blocks[block].groups[group].links.splice(link, 1)
@@ -87,7 +99,7 @@ const app = Vue.createApp({
       return false
     },
     onDragStart(event, block, group, link) {
-      this.hideEditPopup()
+      this.hidePopup()
       event.dataTransfer.effectAllowed = "move"
       if (!this.dragData) {
         this.dragData = {block, group, link}
@@ -185,25 +197,25 @@ const app = Vue.createApp({
       this.placeholder = null
     },
     editGroup(block, group, event) {
-      this.editData = { block, group, type: 'title' }
-      this.showEditPopup(event.currentTarget)
+      this.popupData = { block, group, type: 'title' }
+      this.openPopup(event.currentTarget)
     },
     deleteGroup(block, group) {
       this.blocks[block].groups.splice(group, 1)
     },
     editBlock(block, event) {
-      this.editData = { block, group: undefined, type: 'title' }
-      this.showEditPopup(event.currentTarget)
+      this.popupData = { block, group: undefined, type: 'title' }
+      this.openPopup(event.currentTarget)
     },
     deleteBlock(block) {
       this.blocks.splice(block, 1)
     },
-    reset() {
-      this.blocks = JSON.parse(window.localStorage.getItem('startpage-data') ?? '[]')
-    },
-    cancel() {
-      this.reset()
-      this.hideEditPopup()
+    async cancel() {
+      const db = await idb.openDB("Startpage")
+      const versions = await db.getAllKeys("data")
+      const latest = versions[versions.length-1]
+      await this.loadVersion(latest)
+      this.hidePopup()
       this.edit = false
     },
     editJson() {
@@ -217,10 +229,45 @@ const app = Vue.createApp({
     cancelJson() {
       this.showJson = false
     },
-    accept() {
-      window.localStorage.setItem('startpage-data', JSON.stringify(this.blocks))
-      this.hideEditPopup()
+    async accept() {
+      const data = JSON.parse(JSON.stringify(this.blocks))
+      const db = await idb.openDB("Startpage")
+      const timestamp = new Date()
+      await db.put("data", {timestamp: timestamp, blocks: data})
+      this.lastUpdated = timestamp
+      this.hidePopup()
       this.edit = false
+    },
+    async showVersions(event) {
+      if (this.showPopup && this.popupData.type === 'versions') {
+        this.hidePopup()
+      } else {
+        const db = await idb.openDB("Startpage")
+        const versions = await db.getAllKeys("data")
+        this.popupData = { versions, type: 'versions' }
+        this.openPopup(event.target)
+      }
+    },
+    async loadVersion(version) {
+      const db = await idb.openDB("Startpage")
+      const dataFromDb = await db.get("data", version)
+      this.lastUpdated = dataFromDb.timestamp
+      this.blocks.splice(0, this.blocks.length, ...dataFromDb.blocks)
+    },
+    async deleteVersion(version) {
+      const db = await idb.openDB("Startpage")
+      await db.delete("data", version)
+      if (await db.count("data") === 0) {
+        await db.put("data", {timestamp: new Date(), blocks: []})
+      }
+      const versions = await db.getAllKeys("data")
+      this.popupData = { versions, type: 'versions' }
+      if (version.valueOf() === this.lastUpdated.valueOf()) {
+        const latest = versions[versions.length-1]
+        const dataFromDb = await db.get("data", latest)
+        this.lastUpdated = dataFromDb.timestamp
+        this.blocks.splice(0, this.blocks.length, ...dataFromDb.blocks)
+      }
     }
   }
 })
@@ -255,7 +302,7 @@ app.component("edit-title", {
   },
   methods: {
     close() {
-      this.$root.hideEditPopup()
+      this.$root.hidePopup()
     },
     save() {
       if (this.block < 0) {
@@ -303,7 +350,7 @@ app.component("edit-link", {
   },
   methods: {
     close() {
-      this.$root.hideEditPopup()
+      this.$root.hidePopup()
     },
     save() {
       if (this.link < 0) {
@@ -321,6 +368,26 @@ app.component("edit-link", {
     this.name = this.$root.blocks[this.block].groups[this.group].links[this.link].name
     this.url = this.$root.blocks[this.block].groups[this.group].links[this.link].url
   }
+})
+
+app.component("show-versions", {
+  template: "#versions-template",
+  props: {
+    versions: Array
+  },
+  computed: {
+    lastUpdated() {
+      return this.$root.lastUpdated
+    }
+  },
+  methods: {
+    loadVersion(version) {
+      this.$root.loadVersion(version)
+    },
+    deleteVersion(version) {
+      this.$root.deleteVersion(version)
+    },
+  },
 })
 
 const vm = app.mount('#app')
