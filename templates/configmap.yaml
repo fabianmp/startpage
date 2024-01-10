@@ -7,6 +7,12 @@ metadata:
 data:
   index.html: |-
     {{- .Files.Get "index.html" | nindent 4 }}
+  tailwind.min.css: |-
+    {{- .Files.Get "tailwind.min.css" | nindent 4 }}
+  json-editor.css: |-
+    {{- .Files.Get "json-editor.css" | nindent 4 }}
+  json-editor.js: |-
+    {{- .Files.Get "json-editor.js" | nindent 4 }}
   startpage.js: |-
     {{- .Files.Get "startpage.js" | nindent 4 }}
   startpage-data.js: |-
