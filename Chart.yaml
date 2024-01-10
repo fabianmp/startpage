@@ -2,7 +2,7 @@ apiVersion: v2
 name: startpage
 description: A Helm chart for a simple portal page
 type: application
-version: 0.1.0
+version: 0.1.1
 home: https://github.com/fabianmp/startpage
 sources:
   - https://github.com/fabianmp/startpage
