@@ -35,7 +35,7 @@
           @dragstart.self="onDragStart($event, blockIdx)" @drop="onDrop($event, blockIdx)"
           @dragover="onDragOver($event, blockIdx)" @dragenter="onDragEnter($event, blockIdx)"
           @dragleave="onDragLeave($event, blockIdx)" @dragend.self="onDragEnd">
-          <div class="p-2 pl-5 rounded-t-lg font-bold text-white flex" :class="`bg-${block.color}`">
+          <div class="p-2 pl-5 rounded-t-lg font-bold text-white" :class="`bg-${block.color} ${block.extraClasses}`">
             {{ block.name }}
             <div class="inline-flex flex-grow justify-end" v-if="edit && !dragData">
               <button data-tippy-content="Visible" class=" w-10 hover:bg-gray-200 rounded" v-if="block.visible"
