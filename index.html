@@ -26,9 +26,15 @@
     <button data-tippy-content="Edit JSON" data-tippy-placement="left"
       class="fixed bottom-40 right-8 w-14 h-14 bg-blue-500 hover:bg-blue-400 p-3 rounded-full shadow-lg text-white flex items-center justify-center"
       v-if="edit" @click="editJson()"><i class="fas fa-edit"></i></button>
-    <button data-tippy-content="Versions" data-tippy-placement="left"
-      class="fixed bottom-8 left-8 bg-gray-200 hover:bg-gray-100 px-5 py-3 rounded-full shadow-lg flex items-center justify-center"
-      v-if="edit" @click="showVersions"><i class="fas fa-timeline pr-2"></i>{{ lastUpdated?.toLocaleString() }}</button>
+    <span class="fixed bottom-8 left-8 flex space-x-5">
+      <button data-tippy-content="Versions" data-tippy-placement="left"
+        class="bg-gray-200 hover:bg-gray-100 px-5 py-3 rounded-full shadow-lg flex items-center justify-center"
+        v-if="edit" @click="showVersions"><i class="fas fa-timeline pr-2"></i>{{ lastUpdated?.toLocaleString() }}</button>
+      <button data-tippy-content="Behavior when opening a link" data-tippy-placement="left"
+        class="bg-gray-200 hover:bg-gray-100 px-5 py-3 rounded-full shadow-lg flex items-center justify-center w-64"
+        :class="{ 'bg-green-400 hover:bg-green-200': openNewTab, 'bg-yellow-400 hover:bg-yellow-200': !openNewTab }"
+        v-if="edit" @click="toggleNewTab()"><i class="fas pr-2" :class="{ 'fa-external-link-alt': openNewTab, 'fa-window-maximize': !openNewTab }"></i>{{ openNewTab ? "Open links in new tab" : "Open links in same tab" }}</button>
+    </span>
 
     <div class="container mx-auto sm:my-5 space-y-4">
       <template v-for="block, blockIdx in blocks" :key="block.name">
@@ -65,7 +71,7 @@
                 </div>
               </div>
               <template v-for="link, linkIdx in group.links">
-                <a class="block px-2 py-1 hover:bg-gray-100 flex" :href="link.url" v-if="!edit">{{ link.name }}</a>
+                <a class="block px-2 py-1 hover:bg-gray-100 flex" :href="link.url" :target="openNewTab ? '_blank' : null" v-if="!edit">{{ link.name }}</a>
                 <div class="block px-2 py-1 hover:bg-gray-100 flex" v-if="edit" draggable="true" :title="link.url"
                   @dragstart.self="onDragStart($event, blockIdx, groupIdx, linkIdx)" @drop="onDrop($event, blockIdx, groupIdx, linkIdx)"
                   @dragover="onDragOver($event, blockIdx, groupIdx, linkIdx)" @dragenter="onDragEnter($event, blockIdx, groupIdx, linkIdx)"

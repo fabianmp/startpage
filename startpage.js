@@ -8,6 +8,7 @@ const app = Vue.createApp({
       lastUpdated: null,
       blocks: [],
       edit: false,
+      openNewTab: false,
       popupData: null,
       dragData: null,
       dragSource: null,
@@ -35,6 +36,7 @@ const app = Vue.createApp({
       const versions = await db.getAllKeys("data")
       const latest = versions[versions.length-1]
       await this.loadVersion(latest)
+      this.openNewTab = JSON.parse(window.localStorage.getItem('startpage-open-new-tab', 'false'))
       this.localStorage = true
     }
     tippy.createSingleton(tippy('[data-tippy-content]'), {
@@ -268,6 +270,10 @@ const app = Vue.createApp({
         this.lastUpdated = dataFromDb.timestamp
         this.blocks.splice(0, this.blocks.length, ...dataFromDb.blocks)
       }
+    },
+    toggleNewTab() {
+      this.openNewTab = !this.openNewTab
+      window.localStorage.setItem('startpage-open-new-tab', JSON.stringify(this.openNewTab))
     }
   }
 })
