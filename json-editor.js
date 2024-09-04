@@ -34,8 +34,8 @@ class JSON_Editor extends HTMLElement {
                     display: inline-flex;
                     width: 300px;
                     height: 150px;
-                    background: #ffffff;
-                    color: #000000;
+                    background: #252530;
+                    color: #fff;
                     font-family: monospace;
                     padding: 4px;
                 }
@@ -70,9 +70,8 @@ class JSON_Editor extends HTMLElement {
     }
 
     connectedCallback() {
-        this.editor.innerHTML = this.getAttribute('value')
         this.indent = Number(this.getAttribute('indent')) || 3
-        this.format()
+        this.value = this.getAttribute('value')
     }
 
     //===[ Caret Control ]=================================================
@@ -150,6 +149,11 @@ class JSON_Editor extends HTMLElement {
     }
 
     //===[ Formatting ]====================================================
+
+    escape_html(input) {
+        const replace = [ ['&', '&amp;'], ['<', '&lt;'], ['>', '&gt;'], ['"', '&quot;'], ["'", '&#039;'] ]
+        return replace.reduce( ( escaped, replacement) => escaped.replaceAll( ...replacement ), input)
+    }
    
     // format a json object
     format_object(input, offset=0) {
@@ -159,7 +163,7 @@ class JSON_Editor extends HTMLElement {
         let output = ''
         output += `<span part="braces">{</span><br>\n`
         output += Object.keys(input).map((key, index, list) => {
-            return `${'&nbsp;'.repeat(offset+this.indent)}<span part="key" part="key"><span part="key_quotes">\"</span>${key}<span part="key_quotes">\"</span></span><span part="colon">:</span><span part="value">${this.format_input(input[key], offset+this.indent)}</span>${index < list.length-1 ? '<span part="comma">,</span>' : ''}<br>\n`
+            return `${'&nbsp;'.repeat(offset+this.indent)}<span part="key" part="key"><span part="key_quotes">\"</span>${this.escape_html(key)}<span part="key_quotes">\"</span></span><span part="colon">:</span><span part="value">${this.format_input(input[key], offset+this.indent)}</span>${index < list.length-1 ? '<span part="comma">,</span>' : ''}<br>\n`
         }).join('')
         output += '&nbsp;'.repeat(offset)
         output += `<span part="braces">}</span>`
@@ -180,7 +184,7 @@ class JSON_Editor extends HTMLElement {
 
     // format a json string
     format_string(input) {
-        return `<span part="string"><span part="string_quotes">\"</span>${input}<span part="string_quotes">\"</span></span>`;
+        return `<span part="string"><span part="string_quotes">\"</span>${this.escape_html(input)}<span part="string_quotes">\"</span></span>`;
     }
 
     // format a boolean
@@ -217,8 +221,7 @@ class JSON_Editor extends HTMLElement {
         const pointer = this.get_caret_pointer()
         let content = ''
         try {
-            // remove %A0 (NBSP) characters, which are no valid in JSON
-            content = editor.innerText && JSON.parse(editor.innerText.split('\xa0').join(''))
+            content = JSON.parse(this.raw_string)
         }
         catch(exception) {
             return
@@ -236,6 +239,15 @@ class JSON_Editor extends HTMLElement {
     }
 
     //===[ Getters / Setters ]=============================================
+
+    get raw_string() {
+        // remove %A0 (NBSP) characters, which are no valid in JSON
+        return this.editor.innerText?.replaceAll('\xa0', '') || ''
+    }
+
+    set raw_string( input ) {
+        this.string_value = input
+    }
 
     get string_value() {
         return this.last_string_content
@@ -260,6 +272,16 @@ class JSON_Editor extends HTMLElement {
 
     set json_value( input ) {
         this.string_value = JSON.stringify( input )
+    }
+
+    is_valid() {
+        try {
+            JSON.parse( this.raw_string )
+            return true
+        }
+        catch(e) {
+            return false
+        }
     }
 }
 
