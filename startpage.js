@@ -293,11 +293,24 @@ app.component("tooltip-dummy", {
   }
 })
 
+function createIconPicker() {
+  return new IconPicker('#icon', {
+    theme: "default",
+    iconSource: [{
+      key: 'fa6-solid',
+      prefix: 'fa-',
+      url: 'https://raw.githubusercontent.com/iconify/icon-sets/master/json/fa6-solid.json'
+    }],
+    closeOnSelect: true
+  });
+}
+
 app.component("edit-title", {
   template: "#edit-title-template",
   data() {
     return {
       name: '',
+      icon: null,
       color: '',
       colors: colors
     }
@@ -312,18 +325,26 @@ app.component("edit-title", {
     },
     save() {
       if (this.block < 0) {
-        this.$root.blocks.push({ name: this.name, color: this.color, groups: [], visible: true })
+        this.$root.blocks.push({ name: this.name, icon: this.icon, color: this.color, groups: [], visible: true })
       } else if (this.group < 0) {
-        this.$root.blocks[this.block].groups.push({ name: this.name, color: this.color, links: [] })
+        this.$root.blocks[this.block].groups.push({ name: this.name, icon: this.icon, color: this.color, links: [] })
       } else if (this.group === undefined) {
         this.$root.blocks[this.block].name = this.name
+        this.$root.blocks[this.block].icon = this.icon
         this.$root.blocks[this.block].color = this.color
       } else {
         this.$root.blocks[this.block].groups[this.group].name = this.name
+        this.$root.blocks[this.block].groups[this.group].icon = this.icon
         this.$root.blocks[this.block].groups[this.group].color = this.color
       }
       this.close()
     }
+  },
+  mounted() {
+    const iconPicker = createIconPicker();
+    iconPicker.on('save', i => {
+      this.icon = i.value;
+    });
   },
   created() {
     if (this.block < 0 || this.group < 0) {
@@ -333,9 +354,11 @@ app.component("edit-title", {
 
     if (this.group === undefined) {
       this.name = this.$root.blocks[this.block].name
+      this.icon = this.$root.blocks[this.block].icon
       this.color = this.$root.blocks[this.block].color
     } else {
       this.name = this.$root.blocks[this.block].groups[this.group].name
+      this.icon = this.$root.blocks[this.block].groups[this.group].icon
       this.color = this.$root.blocks[this.block].groups[this.group].color
     }
   }
@@ -346,6 +369,7 @@ app.component("edit-link", {
   data() {
     return {
       name: '',
+      icon: null,
       url: ''
     }
   },
@@ -360,18 +384,26 @@ app.component("edit-link", {
     },
     save() {
       if (this.link < 0) {
-        this.$root.blocks[this.block].groups[this.group].links.push({ name: this.name, url: this.url })
+        this.$root.blocks[this.block].groups[this.group].links.push({ name: this.name, icon: this.icon, url: this.url })
       } else {
         this.$root.blocks[this.block].groups[this.group].links[this.link].name = this.name
+        this.$root.blocks[this.block].groups[this.group].links[this.link].icon = this.icon
         this.$root.blocks[this.block].groups[this.group].links[this.link].url = this.url
       }
       this.close()
     }
   },
+  mounted() {
+    const iconPicker = createIconPicker();
+    iconPicker.on('save', i => {
+      this.icon = i.value;
+    });
+  },
   created() {
     if (this.link < 0) return
 
     this.name = this.$root.blocks[this.block].groups[this.group].links[this.link].name
+    this.icon = this.$root.blocks[this.block].groups[this.group].links[this.link].icon
     this.url = this.$root.blocks[this.block].groups[this.group].links[this.link].url
   }
 })
