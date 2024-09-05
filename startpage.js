@@ -313,11 +313,18 @@ app.component("tooltip-dummy", {
 function createIconPicker() {
   return new IconPicker('#icon', {
     theme: "default",
-    iconSource: [{
-      key: 'fa6-solid',
-      prefix: 'fa-',
-      url: 'https://raw.githubusercontent.com/iconify/icon-sets/master/json/fa6-solid.json'
-    }],
+    iconSource: [
+      {
+        key: 'fa6-solid',
+        prefix: 'fa-',
+        url: 'https://raw.githubusercontent.com/iconify/icon-sets/master/json/fa6-solid.json'
+      },
+      {
+        key: 'fa6-brands',
+        prefix: 'fa-brands fa-',
+        url: 'https://raw.githubusercontent.com/iconify/icon-sets/master/json/fa6-brands.json'
+      }
+    ],
     closeOnSelect: true
   });
 }
