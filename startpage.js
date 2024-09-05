@@ -1,11 +1,16 @@
 const baseColors = ['red', 'yellow', 'green', 'blue', 'purple', 'gray']
 const colors = baseColors.flatMap(c => [300, 600, 800].map(w => `${c}-${w}`))
+const messages = {
+  1: "You can now add icons to groups and links",
+  2: "You can now choose to open all links in a new tab",
+}
 
 const app = Vue.createApp({
   data() {
     return {
       localStorage: true,
       lastUpdated: null,
+      messages: [],
       blocks: [],
       edit: false,
       openNewTab: false,
@@ -36,7 +41,8 @@ const app = Vue.createApp({
       const versions = await db.getAllKeys("data")
       const latest = versions[versions.length-1]
       await this.loadVersion(latest)
-      this.openNewTab = JSON.parse(window.localStorage.getItem('startpage-open-new-tab', 'false'))
+      this.openNewTab = JSON.parse(window.localStorage.getItem('startpage-open-new-tab') ?? 'false')
+      this.loadMessages()
       this.localStorage = true
     }
     tippy.createSingleton(tippy('[data-tippy-content]'), {
@@ -69,6 +75,17 @@ const app = Vue.createApp({
       this.popupTippy?.destroy()
       this.popupData = null
       this.showPopup = false
+    },
+    loadMessages() {
+      const dismissed = JSON.parse(window.localStorage.getItem("startpage-dismissed-messages") ?? '[]')
+      const newMessages = Object.entries(messages).map(x => {return {id: x[0], message: x[1]}}).filter(x => !dismissed.includes(x.id))
+      this.messages.splice(0, this.messages.length, ...newMessages)
+    },
+    dismissMessage(id) {
+      const dismissed = JSON.parse(window.localStorage.getItem("startpage-dismissed-messages") ?? '[]')
+      dismissed.push(id)
+      window.localStorage.setItem("startpage-dismissed-messages", JSON.stringify(dismissed))
+      this.loadMessages()
     },
     editLink(block, group, link, event) {
       this.popupData = { block, group, link, type: 'link' }
