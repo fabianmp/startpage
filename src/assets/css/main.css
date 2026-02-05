@@ -1,0 +1,12 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+@theme static {
+  --font-sans: 'Public Sans', sans-serif;
+}
+
+.dark {
+  --ui-primary: var(--ui-color-primary-500);
+}
+
+@source inline("{bg,border,hover:bg}-{red,blue,green,yellow,purple,gray,pink}-{100,200,300,400,500,600,700,800,900}")
