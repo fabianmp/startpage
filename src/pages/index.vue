@@ -64,7 +64,7 @@ newMessages.forEach((m) =>
 </script>
 
 <template>
-  <div class="flex flex-col m-5 gap-6">
+  <div class="flex flex-col px-20 py-5 gap-6">
     <Block
       v-for="block in data.blocks"
       v-if="data"
